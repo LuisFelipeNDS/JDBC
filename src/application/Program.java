@@ -1,35 +1,51 @@
 package application;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import db.DB;
-import db.DbIntegrityException;
+import db.DbException;
 
 public class Program {
 
 	public static void main(String[] args) {
 
 		Connection conn = null;
-		PreparedStatement st = null;
+		Statement st = null;
 		try {
 			conn = DB.getConection();
 			
-			st = conn.prepareStatement("DELETE FROM department " +
-					"WHERE " +
-					"department.Id = ?");
+			conn.setAutoCommit(false);
 			
+			st = conn.createStatement();
 			
-			st.setInt(1, 2);
+			int l1 = st.executeUpdate("UPDATE seller SET BaseSalary = 2090.00 " +
+					"WHERE departmentId = 1");
 			
-			//Execute Update retorna a quantidade de linhas afetadas
-			int rw = st.executeUpdate();
+			/*int x =1;
+			if(x < 2) {
+				throw new SQLException("SIMULANDO ERRO");
+			}*/
 			
-			System.out.println("Feito, total de linhas afetadas: " + rw);
+			int l2 = st.executeUpdate("UPDATE seller SET BaseSalary = 3090.00 " +
+					"WHERE departmentId = 2");
+			
+			conn.commit();
+			
+			System.out.println("Linha 1: " + l1);
+			System.out.println("Linha 2: " + l2);
+			
 		} 
 		catch(SQLException e) {
-			throw new DbIntegrityException(e.getLocalizedMessage());
+			try {
+				conn.rollback();
+				throw new DbException("FALHA NO SISTEMA, TRANSACAO NAO EFETUADA "
+						+ e.getMessage());
+				
+			} catch (SQLException rB) {
+				throw new DbException("ERRO EM DESFAZER TRANSACAO " + rB.getMessage());
+			}
 		}
 		finally {
 			DB.closeStatement(st);
